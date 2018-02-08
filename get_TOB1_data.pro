@@ -2,7 +2,6 @@
 ;	reads TOB1 files, as long as the record structure is not too complicated
 ;	currrently it is expected, that the first three columns are ulonarr and contain time and record number information
 ;	the rest should be IEEE4 !!!!
-; 	with FP2, like in Namibia, it get's complicated
 ;
 
 
