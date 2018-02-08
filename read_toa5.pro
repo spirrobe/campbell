@@ -3,7 +3,7 @@
 ; reads TOA5 files and returns a structure with header and data
 ;searches automatic for length of hdr (not necessary usually, but done anyway)
 ; IMPORTANT: Requires a timestamp structures with date behin as first entry, since it parses for this entry
-function Read_TOA5HDR,filename,add_meta=add_meta,lineskip=lineskip
+function Read_TOA5,filename,add_meta=add_meta,lineskip=lineskip
   if not keyword_set(filename) then filename=dialog_pickfile(path='\\Met-server0\Messnetz\kalib\SONICS\Windkanal 2011\data')
   if not KEYWORD_SET(lineskip) then lineskip=0
   openr, lun, filename,/get_lun
