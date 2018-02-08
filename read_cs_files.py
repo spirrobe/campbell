@@ -5,13 +5,6 @@ from operator import itemgetter
 
 __author__ = 'spirro00'
 
-
-# example
-# dir = 'F:/UniBas/PhD/Chrischona/Data/Rawdata/',
-# file = 'CSAT3/13072015_1800/7854.fast_scan.dat'
-# data,hdr = read_cs_files(dir + file)
-
-
 def fp22float(fp2integer):
     inf, neginf, nan = 0x1fff, 0x9fff, 0x9ffe
 
