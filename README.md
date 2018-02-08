@@ -9,3 +9,5 @@ The conversion may take some time but offer up options such as a repair utility.
 a user wants a more direct method. For this purpose some function are available here to be used.
 
 For documentation about the file formats, see appendix B of the LoggerNet manual at https://s.campbellsci.com/documents/cn/manuals/loggernet.pdf
+
+There are some differences between the utilities: The python TOB3 reader is somewhat slower, because of how the frames are disentangled. My guess is, that this could be improved. The python utilites contains an automatic filetype detection, and if it doesn't find one gives prints a message that you could add one yourself for this filetype. Additionally, the python one can read in the csixml format as well.
