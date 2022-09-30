@@ -32,15 +32,24 @@ def read_cs_formats(csformat):
         if _.startswith('ASCII'):
             n_string = _.replace(')', '')
             n_string = n_string.split(sep = '(')
-            pyformat.append(n_string[1] + 's')
+            pyformat.append(f'{n_string[1]}s')
+        elif _ in knownformats:
+            pyformat.append(knownformats[_])
         else:
-            if _ in knownformats.keys():
-                pyformat.append(knownformats[_])
-            else:
-                print('Warning: The format code ' + _ + ' is not known \n' +
-                      'please adapt the known formats (a dictionary)' +
-                      'This is done by the correct identifier from' +
-                      'https://docs.python.org/3.5/library/struct.html')
+            print(
+                (
+                    (
+                        (
+                            f'Warning: The format code {_}'
+                            + ' is not known \n'
+                            + 'please adapt the known formats (a dictionary)'
+                        )
+                        + 'This is done by the correct identifier from'
+                    )
+                    + 'https://docs.python.org/3.5/library/struct.html'
+                )
+            )
+
 
     return pyformat
 
@@ -65,7 +74,9 @@ def read_cs_files(filename, forcedatetime=False,
                 csixmlversion = float(csixml[1].split('=')[-1])
                 if csixmlversion > 1.0:
                     print(
-                        'This reader has been written for CSIXML version 1.0, but the version is ' + str(csixmlversion))
+                        f'This reader has been written for CSIXML version 1.0, but the version is {csixmlversion}'
+                    )
+
                 filetype = csixml[0].upper()
         else:
             file_obj.seek(0)
@@ -77,11 +88,11 @@ def read_cs_files(filename, forcedatetime=False,
         if metaonly:
             return meta
         if not quiet:
-            print('Reading the file ' + filename)
+            print(f'Reading the file {filename}')
 
         if filetype in ['TOA5', 'TOB1', 'TOB3', 'CSIXML']:
             if not quiet:
-                print(filename + ' is a ' + filetype + '-File')
+                print(f'{filename} is a {filetype}-File')
             if filetype == 'TOA5':
                 data = read_cs_toa5(file_obj,
                                     bycol = bycol, forcedatetime = forcedatetime, **kwargs)
@@ -123,13 +134,13 @@ def read_cs_meta(file_obj, filetype):
                  'TOB3': 6,
                  'CSIXML': -1,  # CSIXML is special insofar as it has "unlimited" number of headerlines
                  }
-    if filetype in filetypes:
-        metalines = filetypes[filetype]
-    else:
-        metalines = 0
+    metalines = filetypes.get(filetype, 0)
     if metalines >= 0:
-        meta = [file_obj.readline().rstrip().decode().split(sep = ',')
-                for i in range(metalines)]
+        meta = [
+            file_obj.readline().rstrip().decode().split(sep=',')
+            for _ in range(metalines)
+        ]
+
     elif filetype == 'CSIXML':
         import xml.etree.ElementTree as ET
 
@@ -143,8 +154,11 @@ def read_cs_meta(file_obj, filetype):
         # these are by default process name type, but we'd like them as name process type..
         metakeys = sorted(root.getchildren()[0][1][0].keys())
 
-        for line in range(len(metakeys)):
-            meta.append([i.attrib[metakeys[line]] for i in root.getchildren()[0][1]])
+        meta.extend(
+            [i.attrib[metakeys[line]] for i in root.getchildren()[0][1]]
+            for line in range(len(metakeys))
+        )
+
         # to adapt this type of file to the rest (so everything gives the same format)
         # we here add the Timestamp and Record to the meta header
         meta[1] = ['TIMESTAMP', 'RECORD',] + meta[1]
@@ -165,8 +179,7 @@ def read_cs_convert_tob3_daterec(seconds):  # , milliseconds):
     basedate = _dt.datetime(year = 1990,
                             month = 1, day = 1, hour = 0,
                             second = 0, microsecond = 0)
-    date = basedate + td
-    return date
+    return basedate + td
 
 
 def read_cs_convert_tob1_daterec(daterec):
@@ -175,8 +188,7 @@ def read_cs_convert_tob1_daterec(daterec):
     td = _dt.timedelta(seconds = daterec[0],
                        microseconds = daterec[1] / 10 ** 3)
     date = [basedate + td]
-    for i in daterec[2:]:
-        date.append(i)
+    date.extend(iter(daterec[2:]))
     return date
 
 
@@ -210,8 +222,8 @@ def read_cs_csixml(file_obj, bycol=True, forcedatetime=False, guesstype=False):
         if bycol:
             data[0] = [_dt.datetime.strptime(_, tf + ftf['.' in _]) for _ in data[0]]
         else:
-            for i in range(len(data)):
-                data[i][0] = _dt.datetime.strptime(data[i][0], tf + ftf['.' in data[i][0]])
+            for datum in data:
+                datum[0] = _dt.datetime.strptime(datum[0], tf + ftf['.' in datum[0]])
 
 
 
@@ -260,13 +272,11 @@ def read_cs_tob1(file_obj, meta,
     csformat = meta[-1]
     pyformat = read_cs_formats(csformat)
     #    print(csformat)
-    subrecsizes = 0
-    for i in pyformat:
-        subrecsizes += struct.Struct(i).size
+    subrecsizes = sum(struct.Struct(i).size for i in pyformat)
     recbegin = file_obj.tell()
     n_rec_total = (os.path.getsize(file_obj.name) - recbegin) / subrecsizes
     data = []
-    for i in range(int(n_rec_total)):
+    for _ in range(int(n_rec_total)):
         tempdata = []
         for ii in pyformat:
             nbyte = struct.Struct(ii).size
@@ -316,12 +326,10 @@ def read_cs_tob3(file_obj, meta,
     frameresolution = int(meta[1][1].split(sep = ' ')[0])
     multiplier = meta[1][1].split(sep = ' ')[1]
 
-    # should be expanded for the corrsponding amount of seconds in the mulitpliert
-    time_abbr_dict = {'MIN': 60., 'SEC': 1.}
-    multiplier_scale_dict = {'U': 10 ** 6, 'M': 10 ** 3}
     # len > 3 gives us a scaling factor for the rest of the string
     if multiplier[0].isalpha():
         if multiplier.__len__() > 3:
+            multiplier_scale_dict = {'U': 10 ** 6, 'M': 10 ** 3}
             if multiplier[0] in multiplier_scale_dict:
                 prescale = multiplier_scale_dict[multiplier[0]]
                 multiplier = multiplier[1:]
@@ -337,6 +345,8 @@ def read_cs_tob3(file_obj, meta,
                 print('Abbreviation is only 3 letters long')
             prescale = 1. ** 0
 
+        # should be expanded for the corrsponding amount of seconds in the mulitpliert
+        time_abbr_dict = {'MIN': 60., 'SEC': 1.}
         if multiplier in time_abbr_dict:
             multiplier = prescale / time_abbr_dict[multiplier]
         else:
@@ -358,10 +368,7 @@ def read_cs_tob3(file_obj, meta,
         scalefac = 1 ** 0
     subrec_scale = nscale / scalefac
 
-    subrecsizes = 0
-    for i in pyformat:
-        subrecsizes += struct.Struct(i).size
-
+    subrecsizes = sum(struct.Struct(i).size for i in pyformat)
     n_rec_frame = (int(framesize) - struct.Struct(fhdr + ffoot).size) // subrecsizes
     basestruct = struct.Struct(fhdr + ffoot).size + subrecsizes * n_rec_frame
     recbegin = file_obj.tell()
@@ -445,7 +452,7 @@ def read_cs_tob3(file_obj, meta,
                         file_obj.seek(inpos + (ii+1) * subrecsizes)
             else:
                 # this is a major frame, easy
-                for ii in range(n_rec_frame):
+                for _ in range(n_rec_frame):
                     temprec = []
                     for iii in pyformat:
                         one_record = struct.unpack_from(iii, file_obj.read(struct.Struct(iii).size))[0]
@@ -461,13 +468,10 @@ def read_cs_tob3(file_obj, meta,
                     rechdr[-1][0] + (i * subrec_step + subrec_scale * rechdr[-1][1]) for i in
                     range(n_rec_frame))
                 file_obj.seek(outpos + ffootsize)
-        else:
-            # no validation found - continue on
-            pass
-
-    timestamp = []
-    for ii, i in enumerate(seconds):
-        timestamp.append(read_cs_convert_tob3_daterec(seconds[ii]))
+    timestamp = [
+        read_cs_convert_tob3_daterec(seconds[ii])
+        for ii, i in enumerate(seconds)
+    ]
 
     for i, ii in enumerate(rec):
         rec[i].insert(0, recordnumber[i])
