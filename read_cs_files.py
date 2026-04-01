@@ -27,7 +27,7 @@ def read_cs_formats(csformat):
     knownformats = {'FP2': '>H', 'IEEE4': 'f', 'IEEE4B': '>f',
                     'UINT2': '>H', 'INT4': '>i', 'UINT4': '>L',
                     'String': 's', 'Boolean': '?', 'Bool8': '8?',
-                    'LONG': 'l', 'ULONG': '>L'}
+                    'LONG': 'l', 'ULONG': '>L', 'BOOL4': 'i'}
     for _ in csformat:
         if _.startswith('ASCII'):
             n_string = _.replace(')', '')
@@ -98,10 +98,10 @@ def read_cs_files(filename, forcedatetime=False,
                                     bycol = bycol, forcedatetime = forcedatetime, **kwargs)
 
             if filetype == 'TOB1':
-                data = read_cs_tob1(file_obj, meta, **kwargs)
+                data = read_cs_tob1(file_obj, meta, bycol=bycol, **kwargs)
 
             if filetype == 'TOB3':
-                data = read_cs_tob3(file_obj, meta, quiet = quiet, **kwargs)
+                data = read_cs_tob3(file_obj, meta, quiet = quiet, bycol=bycol, **kwargs)
                 # have to insert the timestamp and recordnumber into the meta
                 meta[2].insert(0, 'RECORD'), meta[2].insert(0, 'TIMESTAMP')
 
